@@ -1,6 +1,8 @@
 const { ObjectId } = require('mongodb');
+const { GraphQLError } = require("graphql");
 const { database } = require('../config/mongo-connection');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 class User {
     static getCollection() {
@@ -8,8 +10,6 @@ class User {
     }
 
     static async insertOne(payload) {
-        console.log(payload);
-
         const hashedPassword = await bcrypt.hash(payload.password, 10);
 
         await this.getCollection().insertOne({
@@ -30,6 +30,42 @@ class User {
     static async findOne(condition) {
         const user = await this.getCollection().findOne(condition);
         return user;
+    }
+
+    static async login(username, password) {
+        const user = await this.getCollection().findOne({
+            "username": username
+        });
+
+        if (!user) {
+            throw new GraphQLError('Invalid username or password', {
+                extensions: {
+                    http: {
+                        status: 401,
+                    },
+                },
+            });
+        }
+
+        const validatePassword = await bcrypt.compare(password, user.password);
+
+        if (!validatePassword) {
+            throw new Error('Invalid password');
+        }
+
+        const payload = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            name: user.name
+        }
+
+        const access_token = jwt.sign(payload, 'sebut aku tampan');
+
+        return {
+            statusCode: 200,
+            token: access_token,
+        };
     }
 
     static async findById(id) {

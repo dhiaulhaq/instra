@@ -78,27 +78,16 @@ const userResolvers = {
     },
 
     Mutation: {
-        userLogin: (_, args) => {
+        userLogin: async (_, args) => {
             const { username, password } = args;
-
-            const user = users.find((user) => user.username === username && user.password === password);
-
-            if (!user) {
-                throw new GraphQLError('Invalid username or password', {
-                    extensions: {
-                        http: {
-                            status: 401,
-                        },
-                    },
-                });
-            }
+            const user = await User.login(username, password);
 
             return {
-                statusCode: 200,
+                statusCode: user.statusCode,
                 data: {
-                    token: "imagine-a-token",
+                    token: user.token
                 },
-            };
+            }
         },
 
         userCreate: async (_, args) => {
