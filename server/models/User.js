@@ -71,6 +71,16 @@ class User {
         return user;
     }
 
+    static async findByName(name) {
+        const users = await this.getCollection().find({
+            "name": { $regex: new RegExp(name, 'i') }
+        }).toArray();
+        console.log(users);
+
+
+        return users;
+    }
+
     static async updateUser(id) {
         const user = await this.findById(id);
         if (!user) {

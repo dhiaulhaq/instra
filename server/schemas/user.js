@@ -52,6 +52,8 @@ type Query{
     userFetchAll: [User]
 
     userDetail(id: String): User
+
+    userByName(name: String!): [User]
 }
 
 type Mutation{
@@ -87,6 +89,12 @@ const userResolvers = {
             const { id } = args;
             const user = await User.findById(id);
             return user;
+        },
+
+        userByName: async (_, args) => {
+            const { name } = args;
+            const users = await User.findByName(name);
+            return users;
         }
     },
 
@@ -106,23 +114,23 @@ const userResolvers = {
 
         userCreate: async (_, args) => {
             const { input } = args;
-            const user = await User.insertOne(input);
+            const user = await User.register(input);
             return {
                 statusCode: 200,
                 message: user.message,
             };
         },
 
-        userDelete: (_, args, contextValue) => {
-            const { id } = args;
-            contextValue.dummyFunction();
-            users = users.filter((user) => user.id !== Number(id));
+        // userDelete: (_, args, contextValue) => {
+        //     const { id } = args;
+        //     contextValue.dummyFunction();
+        //     users = users.filter((user) => user.id !== Number(id));
 
-            return {
-                statusCode: 200,
-                message: `User with id ${id} deleted successfully`,
-            };
-        },
+        //     return {
+        //         statusCode: 200,
+        //         message: `User with id ${id} deleted successfully`,
+        //     };
+        // },
 
     },
 };
