@@ -1,33 +1,35 @@
+const { ObjectId } = require('mongodb');
 const { GraphQLError } = require("graphql");
+const User = require('../models/User');
 
-const users = [
-    {
-        id: 1,
-        name: "Leanne Graham",
-        username: "Bret",
-        password: "123456",
-        email: "halo@mail.com",
-    },
-    {
-        id: 2,
-        name: "Ervin Howell",
-        username: "Antonette",
-        password: "123456",
-        email: "admin@mail.com",
-    },
-    {
-        id: 3,
-        name: "Clementine Bauch",
-        username: "Samantha",
-        password: "123456",
-        email: "other@mail.com",
-    },
-];
+// const users = [
+//     {
+//         id: 1,
+//         name: "Leanne Graham",
+//         username: "Bret",
+//         password: "123456",
+//         email: "halo@mail.com",
+//     },
+//     {
+//         id: 2,
+//         name: "Ervin Howell",
+//         username: "Antonette",
+//         password: "123456",
+//         email: "admin@mail.com",
+//     },
+//     {
+//         id: 3,
+//         name: "Clementine Bauch",
+//         username: "Samantha",
+//         password: "123456",
+//         email: "other@mail.com",
+//     },
+// ];
 
 const userTypeDefs = `#graphql
 type User {
-    id: ID!
-    name: String!
+    _id: ID!
+    name: String
     username: String!
     email: String!
     password: String!
@@ -41,13 +43,24 @@ input UserCreateInput {
 }
 
 type Query{
+    #Learning
     userByEmail(email: String!): UserResponse
 
-    userLogin(username: String!, password: String!): UserLoginResponse
+    #Real deal
+    userSearch(name: String!): UserResponse
+
+    userFetchAll: [User]
 }
 
 type Mutation{
+    #Learning
+    userDelete(id: ID!): UserMutationResponse
+
+    #Real deal
+    userLogin(username: String!, password: String!): UserLoginResponse
+
     userCreate(input: UserCreateInput): UserMutationResponse
+
 }
 `;
 
@@ -62,7 +75,9 @@ const userResolvers = {
                 data: user,
             }
         },
+    },
 
+    Mutation: {
         userLogin: (_, args) => {
             const { username, password } = args;
 
@@ -85,30 +100,28 @@ const userResolvers = {
                 },
             };
         },
-    },
 
-    Mutation: {
-        userCreate: (_, args) => {
+        userCreate: async (_, args) => {
             const { input } = args;
-            const { name, username, email, password } = input;
-
-            const id = users.length + 1;
-
-            const newUser = {
-                name,
-                username,
-                email,
-                password,
+            const user = await User.insertOne(input);
+            return {
+                statusCode: 200,
+                message: user.message,
             };
+        },
 
-            users.push(newUser);
+        userDelete: (_, args, contextValue) => {
+            const { id } = args;
+            contextValue.dummyFunction();
+            users = users.filter((user) => user.id !== Number(id));
 
             return {
                 statusCode: 200,
-                message: `User with id ${id} created successfully`,
-            }
-        }
-    }
+                message: `User with id ${id} deleted successfully`,
+            };
+        },
+
+    },
 };
 
 module.exports = { userTypeDefs, userResolvers };

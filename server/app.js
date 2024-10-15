@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== "production") {
+    require('dotenv').config();
+}
+
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
 const { GraphQLError } = require('graphql');
@@ -5,17 +9,19 @@ const { GraphQLError } = require('graphql');
 const { responseTypeDefs } = require('./schemas/response');
 const { userTypeDefs, userResolvers } = require('./schemas/user');
 
+const { connect, getDB } = require('./config/mongo-connection');
+
 const server = new ApolloServer({
     typeDefs: [responseTypeDefs, userTypeDefs],
     resolvers: [userResolvers]
 });
 
 (async () => {
+    await connect();
+    const db = await getDB();
     const { url } = await startStandaloneServer(server, {
         listen: 3000,
         context: async ({ req, res }) => {
-            console.log('This console will be triggered on every request');
-
             return {
                 dummyFunction: () => {
                     console.log('Read headers ', req.headers);
@@ -26,6 +32,7 @@ const server = new ApolloServer({
                         },
                     });
                 },
+                db,
             };
         },
     });
