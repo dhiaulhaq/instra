@@ -9,7 +9,7 @@ class User {
         return database.collection('users');
     }
 
-    static async insertOne(payload) {
+    static async register(payload) {
         const hashedPassword = await bcrypt.hash(payload.password, 10);
 
         await this.getCollection().insertOne({
@@ -20,16 +20,6 @@ class User {
         return {
             message: 'User has been created successfully',
         };
-    }
-
-    static async find() {
-        const users = await this.getCollection().find().toArray();
-        return users;
-    }
-
-    static async findOne(condition) {
-        const user = await this.getCollection().findOne(condition);
-        return user;
     }
 
     static async login(username, password) {
@@ -68,7 +58,20 @@ class User {
         };
     }
 
+    static async fetchAll() {
+        const users = await this.getCollection().find().toArray();
+        return users;
+    }
+
     static async findById(id) {
+        const user = await this.getCollection().findOne({
+            _id: new ObjectId(id)
+        });
+
+        return user;
+    }
+
+    static async updateUser(id) {
         const user = await this.findById(id);
         if (!user) {
             throw new Error('User not found');

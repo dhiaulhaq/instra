@@ -50,6 +50,8 @@ type Query{
     userSearch(name: String!): UserResponse
 
     userFetchAll: [User]
+
+    userDetail(id: String): User
 }
 
 type Mutation{
@@ -75,6 +77,17 @@ const userResolvers = {
                 data: user,
             }
         },
+
+        userFetchAll: async () => {
+            const users = await User.fetchAll();
+            return users;
+        },
+
+        userDetail: async (_, args) => {
+            const { id } = args;
+            const user = await User.findById(id);
+            return user;
+        }
     },
 
     Mutation: {
@@ -83,6 +96,7 @@ const userResolvers = {
             const user = await User.login(username, password);
 
             return {
+                message: 'Success login!',
                 statusCode: user.statusCode,
                 data: {
                     token: user.token
