@@ -75,26 +75,8 @@ class User {
         const users = await this.getCollection().find({
             "name": { $regex: new RegExp(name, 'i') }
         }).toArray();
-        console.log(users);
-
 
         return users;
-    }
-
-    static async updateUser(id) {
-        const user = await this.findById(id);
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        await this.getCollection().updateOne(
-            { _id: new ObjectId(id) },
-            { $set: payload }
-        );
-
-        return {
-            message: 'User has been updated successfully',
-        };
     }
 }
 
