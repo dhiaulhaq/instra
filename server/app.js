@@ -9,14 +9,15 @@ const { GraphQLError } = require('graphql');
 const { responseTypeDefs } = require('./schemas/response');
 const { userTypeDefs, userResolvers } = require('./schemas/user');
 const { followTypeDefs, followResolvers } = require('./schemas/follow');
+const { postTypeDefs, postResolvers } = require('./schemas/post');
 
 const { connect, getDB } = require('./config/mongo-connection');
 
 const authentication = require('./middlewares/authentication');
 
 const server = new ApolloServer({
-    typeDefs: [responseTypeDefs, userTypeDefs, followTypeDefs],
-    resolvers: [userResolvers, followResolvers]
+    typeDefs: [responseTypeDefs, userTypeDefs, followTypeDefs, postTypeDefs],
+    resolvers: [userResolvers, followResolvers, postResolvers]
 });
 
 (async () => {
@@ -26,7 +27,8 @@ const server = new ApolloServer({
         listen: 3000,
         context: async ({ req, res }) => {
             return {
-                authentication: () => authentication(req)
+                authentication: () => authentication(req),
+                db
             };
         },
     });

@@ -27,6 +27,14 @@ const authentication = async (req) => {
         name: user.name
     }
 
+    //???
+    req.userInfo = {
+        userId: user._id,
+        username: user.username,
+        email: user.email,
+        name: user.name
+    }
+
     return userInfo;
 }
 

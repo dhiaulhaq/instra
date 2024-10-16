@@ -20,7 +20,7 @@ type Mutation {
 const followResolvers = {
     Mutation: {
         followCreate: async (_, args, context) => {
-            context.authentication();
+            context.authentication(); //Middleware Authenticaation
             const { input } = args;
             await Follow.followUser(input);
 
