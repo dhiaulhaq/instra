@@ -1,4 +1,6 @@
+const { ObjectId } = require('mongodb');
 const Post = require('../models/Post');
+const redis = require('../config/redis');
 
 const postTypeDefs = `#graphql
 
@@ -34,6 +36,7 @@ type Post {
     likes: [Like]
     createdAt: String
     updatedAt: String
+    Author: User
 }
 
 input PostCreateInput {
@@ -71,14 +74,79 @@ type Mutation {
 
 const postResolvers = {
     Query: {
-        postFetchAll: async () => {
-            const posts = await Post.fetchAll();
+        postFetchAll: async (_, __, context) => {
+            await context.authentication();
+
+            const postCached = await redis.get('posts');
+
+            if (postCached) {
+                const posts = JSON.parse(postCached);
+                return posts;
+            }
+
+            const stages = [
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "authorId",
+                        foreignField: "_id",
+                        as: "Author",
+                    },
+                },
+                {
+                    $project: {
+                        "Author.password": 0,
+                    },
+                },
+                {
+                    $sort: {
+                        createdAt: -1,
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$Author",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+            ];
+
+            const posts = await Post.fetchAll(stages);
+
+            if (posts.length > 0) await redis.set("posts", JSON.stringify(posts));
+
             return posts;
         },
 
         postDetail: async (_, args) => {
             const { id } = args;
-            const post = await Post.findById(id);
+            const stages = [
+                {
+                    $match: {
+                        _id: new ObjectId(id),
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "authorId",
+                        foreignField: "_id",
+                        as: "Author",
+                    },
+                },
+                {
+                    $project: {
+                        "Author.password": 0,
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$Author",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+            ];
+            const post = await Post.findById(stages);
             return post;
         },
     },
@@ -88,6 +156,9 @@ const postResolvers = {
             const user = await context.authentication();
             const { input } = args;
             const post = await Post.insertPost(input, user);
+
+            await redis.del("posts");
+
             return {
                 statusCode: 200,
                 message: post.message,

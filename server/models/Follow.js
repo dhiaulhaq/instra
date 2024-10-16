@@ -1,5 +1,4 @@
 const { ObjectId } = require('mongodb');
-const { GraphQLError } = require("graphql");
 const { database } = require('../config/mongo-connection');
 
 class Follow {
@@ -7,14 +6,28 @@ class Follow {
         return database.collection('follows');
     }
 
-    static async followUser(input) {
-        const result = await this.getCollection().insertOne({
-            ...input,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+    static async followUser(input, user) {
+        const followPayload = {
+            followingId: new ObjectId(input.followingId),
+            followerId: user.userId,
+        }
 
-        return result;
+        const findFollowedUser = await this.getCollection().findOne(followPayload);
+
+        if (findFollowedUser) {
+            await this.getCollection().deleteOne(followPayload);
+
+            return "Unfollowing User";
+
+        } else {
+            await this.getCollection().insertOne({
+                ...followPayload,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            return "Following User";
+        }
     }
 }
 

@@ -63,10 +63,8 @@ class User {
         return users;
     }
 
-    static async findById(id) {
-        const user = await this.getCollection().findOne({
-            _id: new ObjectId(id)
-        });
+    static async findById(stages) {
+        const user = await this.getCollection().aggregate(stages).next();
 
         return user;
     }

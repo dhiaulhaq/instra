@@ -1,10 +1,8 @@
 const Follow = require('../models/Follow');
 
 const followTypeDefs = `#graphql
-
 input FollowCreateInput {
     followingId: String!
-    followerId: String!
 }
 
 type FollowingResult{
@@ -20,13 +18,13 @@ type Mutation {
 const followResolvers = {
     Mutation: {
         followCreate: async (_, args, context) => {
-            context.authentication(); //Middleware Authenticaation
+            const user = await context.authentication();
             const { input } = args;
-            await Follow.followUser(input);
+            const followResult = await Follow.followUser(input, user);
 
             return {
                 statusCode: 200,
-                message: `Success following ${input.followingId}`
+                message: followResult
             };
         },
 

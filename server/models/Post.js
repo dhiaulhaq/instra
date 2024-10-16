@@ -7,8 +7,8 @@ class Post {
         return database.collection('posts');
     }
 
-    static async fetchAll() {
-        const posts = await this.getCollection().find().toArray();
+    static async fetchAll(stages) {
+        const posts = await this.getCollection().aggregate(stages).toArray();
         return posts;
     }
 
@@ -27,10 +27,16 @@ class Post {
         };
     }
 
-    static async findById(id) {
-        const post = await this.getCollection().findOne({
-            _id: new ObjectId(id)
-        });
+    static async findById(stages) {
+        const post = await this.getCollection().aggregate(stages).next();
+
+        if (!post) {
+            throw new GraphQLError("Post not found", {
+                extensions: {
+                    http: { status: 404 },
+                },
+            });
+        }
 
         return post;
     }
@@ -57,22 +63,46 @@ class Post {
     }
 
     static async likePost(input, user) {
-        await this.getCollection().updateOne({
+        const post = await this.getCollection().findOne({
             _id: new ObjectId(input.postId)
-        },
-            {
-                $push: {
-                    likes: {
-                        username: user.username,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    }
-                }
-            }
+        });
+
+        if (!post) {
+            throw new Error("Post not found");
+        }
+
+        const userLikeIndex = post.likes.findIndex(
+            (like) => like.username === user.username
         );
 
-        return {
-            message: 'Success like post'
+        if (userLikeIndex !== -1) {
+            await this.getCollection().updateOne(
+                { _id: new ObjectId(input.postId) },
+                { $pull: { likes: { username: user.username } } }
+            );
+
+            return {
+                message: 'Unliking post'
+            }
+
+        } else {
+            await this.getCollection().updateOne({
+                _id: new ObjectId(input.postId)
+            },
+                {
+                    $push: {
+                        likes: {
+                            username: user.username,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                        }
+                    }
+                }
+            );
+
+            return {
+                message: 'Success like post'
+            }
         }
     }
 }

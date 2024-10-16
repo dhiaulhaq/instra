@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongodb');
 const User = require('../models/User');
 
 const userTypeDefs = `#graphql
@@ -6,7 +7,15 @@ type User {
     name: String
     username: String!
     email: String!
-    password: String!
+}
+
+type UserDetail {
+    _id: ID!
+    name: String
+    username: String!
+    email: String!
+    Followings: [User]
+    Followers: [User]
 }
 
 input UserCreateInput {
@@ -21,7 +30,7 @@ type Query{
 
     userFetchAll: [User]
 
-    userDetail(id: String): User
+    userDetail(id: String): UserDetail
 
     userByName(name: String!): [User]
 }
@@ -41,11 +50,68 @@ const userResolvers = {
             return users;
         },
 
-        userDetail: async (_, args) => {
+        userDetail: async (_, args, context) => {
+            await context.authentication();
             const { id } = args;
-            const user = await User.findById(id);
+
+            const stages = [
+                {
+                    $match: {
+                        _id: new ObjectId(id),
+                    },
+                },
+
+                {
+                    $lookup: {
+                        from: "follows",
+                        localField: "_id",
+                        foreignField: "followerId",
+                        as: "Followings",
+                    },
+                },
+
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "Followings.followingId",
+                        foreignField: "_id",
+                        as: "Followings",
+                    },
+                },
+
+                {
+                    $lookup: {
+                        from: "follows",
+                        localField: "_id",
+                        foreignField: "followingId",
+                        as: "Followers",
+                    },
+                },
+
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "Followers.followerId",
+                        foreignField: "_id",
+                        as: "Followers",
+                    },
+                },
+
+                {
+                    $project: {
+                        password: 0,
+                        "Followings.password": 0,
+                        "Followers.password": 0,
+                    },
+                },
+            ];
+
+            const user = await User.findById(stages);
+            console.log(user);
+
             return user;
         },
+
 
         userByName: async (_, args) => {
             const { name } = args;
