@@ -27,19 +27,14 @@ input UserCreateInput {
 
 type Query{
     userSearch(name: String!): UserResponse
-
     userFetchAll: [User]
-
     userDetail(id: String): UserDetail
-
     userByName(name: String!): [User]
 }
 
 type Mutation{
     userLogin(username: String!, password: String!): UserLoginResponse
-
     userCreate(input: UserCreateInput): UserMutationResponse
-
 }
 `;
 
@@ -107,7 +102,6 @@ const userResolvers = {
             ];
 
             const user = await User.findById(stages);
-            console.log(user);
 
             return user;
         },

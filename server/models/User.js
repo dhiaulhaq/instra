@@ -10,6 +10,51 @@ class User {
     }
 
     static async register(payload) {
+        console.log(payload);
+
+        const findUsername = await this.getCollection()
+            .findOne({ username: payload.username });
+
+        if (findUsername) {
+            throw new GraphQLError("Username already exist", {
+                extensions: {
+                    http: { status: 400 },
+                },
+            });
+        }
+
+        const findEmail = await this.getCollection().findOne({ email: payload.email });
+
+        if (findEmail) {
+            throw new GraphQLError("Email already registered", {
+                extensions: {
+                    http: { status: 400 },
+                },
+            });
+        }
+
+        const email = payload.email;
+        const validateEmail = (email) => {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(String(email).toLowerCase());
+        };
+
+        if (!validateEmail(email)) {
+            throw new GraphQLError("Invalid email format", {
+                extensions: {
+                    http: { status: 400 },
+                },
+            });
+        }
+
+        if (payload.password.length < 5) {
+            throw new GraphQLError("Password must be at least 5 characters", {
+                extensions: {
+                    http: { status: 400 },
+                },
+            });
+        }
+
         const hashedPassword = await bcrypt.hash(payload.password, 10);
 
         await this.getCollection().insertOne({
@@ -65,7 +110,6 @@ class User {
 
     static async findById(stages) {
         const user = await this.getCollection().aggregate(stages).next();
-
         return user;
     }
 
