@@ -19,7 +19,8 @@ type Mutation {
 
 const followResolvers = {
     Mutation: {
-        followCreate: async (_, args) => {
+        followCreate: async (_, args, context) => {
+            context.authentication();
             const { input } = args;
             await Follow.followUser(input);
 

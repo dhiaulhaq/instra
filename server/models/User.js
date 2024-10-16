@@ -50,7 +50,7 @@ class User {
             name: user.name
         }
 
-        const access_token = jwt.sign(payload, 'sebut aku tampan');
+        const access_token = jwt.sign(payload, process.env.JWT_SECRET_KEY);
 
         return {
             statusCode: 200,
