@@ -113,10 +113,15 @@ class User {
         return user;
     }
 
-    static async findByName(name) {
-        const users = await this.getCollection().find({
-            "name": { $regex: new RegExp(name, 'i') }
-        }).toArray();
+    static async findUsers(keyword) {
+        const query = {
+            $or: [
+                { name: { $regex: keyword, $options: "i" } },
+                { username: { $regex: keyword, $options: "i" } },
+            ],
+        };
+
+        const users = await this.getCollection().find(query).toArray();
 
         return users;
     }

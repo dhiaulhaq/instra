@@ -26,10 +26,9 @@ input UserCreateInput {
 }
 
 type Query{
-    userSearch(name: String!): UserResponse
     userFetchAll: [User]
     userDetail(id: String): UserDetail
-    userByName(name: String!): [User]
+    userSearch(keyword: String!): [User]
 }
 
 type Mutation{
@@ -41,100 +40,121 @@ type Mutation{
 const userResolvers = {
     Query: {
         userFetchAll: async () => {
-            const users = await User.fetchAll();
-            return users;
+            try {
+                const users = await User.fetchAll();
+                return users;
+            } catch (error) {
+                throw error;
+            }
         },
 
         userDetail: async (_, args, context) => {
-            await context.authentication();
-            const { id } = args;
+            try {
+                await context.authentication();
+                const { id } = args;
 
-            const stages = [
-                {
-                    $match: {
-                        _id: new ObjectId(id),
+                const stages = [
+                    {
+                        $match: {
+                            _id: new ObjectId(id),
+                        },
                     },
-                },
 
-                {
-                    $lookup: {
-                        from: "follows",
-                        localField: "_id",
-                        foreignField: "followerId",
-                        as: "Followings",
+                    {
+                        $lookup: {
+                            from: "follows",
+                            localField: "_id",
+                            foreignField: "followerId",
+                            as: "Followings",
+                        },
                     },
-                },
 
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "Followings.followingId",
-                        foreignField: "_id",
-                        as: "Followings",
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "Followings.followingId",
+                            foreignField: "_id",
+                            as: "Followings",
+                        },
                     },
-                },
 
-                {
-                    $lookup: {
-                        from: "follows",
-                        localField: "_id",
-                        foreignField: "followingId",
-                        as: "Followers",
+                    {
+                        $lookup: {
+                            from: "follows",
+                            localField: "_id",
+                            foreignField: "followingId",
+                            as: "Followers",
+                        },
                     },
-                },
 
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "Followers.followerId",
-                        foreignField: "_id",
-                        as: "Followers",
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "Followers.followerId",
+                            foreignField: "_id",
+                            as: "Followers",
+                        },
                     },
-                },
 
-                {
-                    $project: {
-                        password: 0,
-                        "Followings.password": 0,
-                        "Followers.password": 0,
+                    {
+                        $project: {
+                            password: 0,
+                            "Followings.password": 0,
+                            "Followers.password": 0,
+                        },
                     },
-                },
-            ];
+                ];
 
-            const user = await User.findById(stages);
+                const user = await User.findById(stages);
 
-            return user;
+                return user;
+            } catch (error) {
+                throw error;
+            }
         },
 
 
-        userByName: async (_, args) => {
-            const { name } = args;
-            const users = await User.findByName(name);
-            return users;
+        userSearch: async (_, args) => {
+            try {
+                const { keyword } = args;
+                const users = await User.findUsers(keyword);
+
+                return users;
+            } catch (error) {
+                throw error;
+            }
         }
     },
 
     Mutation: {
         userLogin: async (_, args) => {
-            const { username, password } = args;
-            const user = await User.login(username, password);
+            try {
+                const { username, password } = args;
+                const user = await User.login(username, password);
 
-            return {
-                message: 'Success login!',
-                statusCode: user.statusCode,
-                data: {
-                    token: user.token
-                },
+                return {
+                    message: 'Success login!',
+                    statusCode: user.statusCode,
+                    data: {
+                        token: user.token
+                    },
+                }
+            } catch (error) {
+                throw error;
             }
         },
 
         userCreate: async (_, args) => {
-            const { input } = args;
-            const user = await User.register(input);
-            return {
-                statusCode: 200,
-                message: user.message,
-            };
+            try {
+                const { input } = args;
+                const user = await User.register(input);
+                return {
+                    statusCode: 200,
+                    message: user.message,
+                };
+            } catch (error) {
+                throw error;
+            }
         },
 
     },

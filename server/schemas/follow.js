@@ -18,14 +18,18 @@ type Mutation {
 const followResolvers = {
     Mutation: {
         followCreate: async (_, args, context) => {
-            const user = await context.authentication();
-            const { input } = args;
-            const followResult = await Follow.followUser(input, user);
+            try {
+                const user = await context.authentication();
+                const { input } = args;
+                const followResult = await Follow.followUser(input, user);
 
-            return {
-                statusCode: 200,
-                message: followResult
-            };
+                return {
+                    statusCode: 200,
+                    message: followResult
+                };
+            } catch (error) {
+                throw error;
+            }
         },
 
     },
