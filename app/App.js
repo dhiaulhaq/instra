@@ -13,9 +13,31 @@ import client from './config/apollo';
 import HomePage from './screens/HomePage';
 import SearchPage from './screens/SearchPage';
 import ProfilePage from './screens/ProfilePage';
+import CreatePage from './screens/CreatePage';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const ProfileStackNavigation = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Profile"
+        component={ProfilePage}
+        options={{
+          headerTitle: "Profile"
+        }}
+      ></Stack.Screen>
+      <Stack.Screen
+        name="CreatePost"
+        component={CreatePage}
+        options={{
+          headerTitle: "New Post"
+        }}
+      ></Stack.Screen>
+    </Stack.Navigator>
+  )
+}
 
 const MainNavigation = () => {
   return (
@@ -30,7 +52,7 @@ const MainNavigation = () => {
               : "home-outline";
           } else if (route.name === "Search") {
             iconName = focused ? "search" : "search-outline";
-          } else if (route.name === "Profile") {
+          } else if (route.name === "ProfileNavigation") {
             iconName = focused ? "person" : "person-outline";
           }
 
@@ -50,8 +72,13 @@ const MainNavigation = () => {
         component={SearchPage}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfilePage}
+        name="ProfileNavigation"
+        component={ProfileStackNavigation}
+        options={{
+          headerShown: false,
+          headerTitle: "Profile Tab",
+          tabBarLabel: "Profile"
+        }}
       />
     </Tab.Navigator>
   );

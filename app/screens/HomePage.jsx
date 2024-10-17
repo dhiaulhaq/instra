@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const posts = [
   {
@@ -14,6 +15,7 @@ const posts = [
     user: "johndoe",
     imageUrl: "https://picsum.photos/200/300",
     likes: 120,
+    comments: 15,
     caption: "Loving the vibes here!",
   },
   {
@@ -21,20 +23,7 @@ const posts = [
     user: "janedoe",
     imageUrl: "https://picsum.photos/200/300",
     likes: 200,
-    caption: "Another beautiful day.",
-  },
-  {
-    id: "3",
-    user: "janedoe",
-    imageUrl: "https://picsum.photos/200/300",
-    likes: 200,
-    caption: "Another beautiful day.",
-  },
-  {
-    id: "4",
-    user: "janedoe",
-    imageUrl: "https://picsum.photos/200/300",
-    likes: 200,
+    comments: 5,
     caption: "Another beautiful day.",
   },
 ];
@@ -52,9 +41,20 @@ export default function HomePage() {
 
       {/* Post Interaction Section */}
       <View style={styles.interactionSection}>
-        <TouchableOpacity>
-          <Text style={styles.likes}>{item.likes} Likes</Text>
-        </TouchableOpacity>
+        <View style={styles.intercationContainer}>
+          <View style={styles.likeSection}>
+            <TouchableOpacity>
+              <Ionicons name="heart-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.interactionText}> {item.likes}</Text>
+          </View>
+          <View style={styles.commentSection}>
+            <TouchableOpacity>
+              <Ionicons name="chatbubble-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.interactionText}> {item.comments}</Text>
+          </View>
+        </View>
         <Text style={styles.caption}>
           <Text style={styles.username}>{item.user}</Text> {item.caption}
         </Text>
@@ -90,8 +90,19 @@ const styles = StyleSheet.create({
   interactionSection: {
     padding: 10,
   },
-  likes: {
+  intercationContainer: {
+    flexDirection: "row",
+  },
+  likeSection: {
+    flexDirection: "row",
+  },
+  commentSection: {
+    flexDirection: "row",
+    marginLeft: 10,
+  },
+  interactionText: {
     fontWeight: "bold",
+    alignSelf: "center",
   },
   caption: {
     marginTop: 5,

@@ -8,10 +8,16 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+
+import CreatePage from "./CreatePage";
+
+const Stack = createStackNavigator();
 
 const { width } = Dimensions.get("window"); // Mengambil ukuran layar untuk membuat grid
 
-const ProfilePage = () => {
+const ProfilePage = ({ navigation }) => {
   const user = {
     name: "John Doe",
     username: "@johndoe",
@@ -34,6 +40,10 @@ const ProfilePage = () => {
   const renderPost = ({ item }) => (
     <Image source={{ uri: item.imgUrl }} style={styles.postImage} />
   );
+
+  const createPostButtonOnPressHandler = () => {
+    navigation.navigate("CreatePost");
+  };
 
   return (
     <View style={styles.container}>
@@ -63,7 +73,10 @@ const ProfilePage = () => {
             <TouchableOpacity style={styles.profileButton}>
               <Text style={styles.editProfileText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileButton}>
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => createPostButtonOnPressHandler()}
+            >
               <Text style={styles.newPostText}>New Post</Text>
             </TouchableOpacity>
           </View>
