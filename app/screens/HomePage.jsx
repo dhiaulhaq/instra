@@ -23,6 +23,20 @@ const posts = [
     likes: 200,
     caption: "Another beautiful day.",
   },
+  {
+    id: "3",
+    user: "janedoe",
+    imageUrl: "https://picsum.photos/200/300",
+    likes: 200,
+    caption: "Another beautiful day.",
+  },
+  {
+    id: "4",
+    user: "janedoe",
+    imageUrl: "https://picsum.photos/200/300",
+    likes: 200,
+    caption: "Another beautiful day.",
+  },
 ];
 
 export default function HomePage() {

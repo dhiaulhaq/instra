@@ -38,6 +38,7 @@ const MainNavigation = () => {
         },
         tabBarActiveTintColor: "tomato",
         tabBarInactiveTintColor: "gray",
+        // title: ''
       })}
     >
       <Tab.Screen
