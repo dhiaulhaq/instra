@@ -10,14 +10,18 @@ import {
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useContext } from "react";
 
 import CreatePage from "./CreatePage";
+import { LoginContext } from "../contexts/LoginContext";
 
 const Stack = createStackNavigator();
 
 const { width } = Dimensions.get("window"); // Mengambil ukuran layar untuk membuat grid
 
 const ProfilePage = ({ navigation }) => {
+  const { setIsLoggedIn } = useContext(LoginContext);
+
   const user = {
     name: "John Doe",
     username: "@johndoe",
