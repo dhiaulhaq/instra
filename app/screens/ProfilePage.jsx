@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,94 +7,127 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { useContext } from "react";
+import { useQuery } from "@apollo/client";
+import * as SecureStore from "expo-secure-store";
+import { useFocusEffect } from "@react-navigation/native";
+import { GET_USER_DETAIL } from "../queries/index";
 
-import CreatePage from "./CreatePage";
-import { LoginContext } from "../contexts/LoginContext";
+const { width } = Dimensions.get("window");
 
-const Stack = createStackNavigator();
+const ProfilePage = ({ route, navigation }) => {
+  const [userId, setUserId] = useState(null);
+  const { searchId } = route.params;
 
-const { width } = Dimensions.get("window"); // Mengambil ukuran layar untuk membuat grid
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await SecureStore.getItemAsync("userId");
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
 
-const ProfilePage = ({ navigation }) => {
-  const { setIsLoggedIn } = useContext(LoginContext);
+  const { loading, error, data, refetch } = useQuery(GET_USER_DETAIL, {
+    variables: { userDetailId: userId },
+    skip: !userId,
+  });
 
-  const user = {
-    name: "John Doe",
-    username: "@johndoe",
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-    followers: 200,
-    following: 150,
-    posts: 75,
-  };
-
-  const posts = [
-    // Data dummy untuk postingan (gambar-gambar)
-    { id: "1", imgUrl: "https://source.unsplash.com/random/1" },
-    { id: "2", imgUrl: "https://source.unsplash.com/random/2" },
-    { id: "3", imgUrl: "https://source.unsplash.com/random/3" },
-    { id: "4", imgUrl: "https://source.unsplash.com/random/4" },
-    { id: "5", imgUrl: "https://source.unsplash.com/random/5" },
-    { id: "6", imgUrl: "https://source.unsplash.com/random/6" },
-  ];
-
-  const renderPost = ({ item }) => (
-    <Image source={{ uri: item.imgUrl }} style={styles.postImage} />
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        console.log(route);
+        refetch();
+      }
+    }, [userId])
   );
 
-  const createPostButtonOnPressHandler = () => {
-    navigation.navigate("CreatePost");
-  };
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="tomato" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error loading profile</Text>
+      </View>
+    );
+  }
+
+  const user = data?.userDetail;
+
+  const renderPost = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => navigation.navigate("PostDetail", { postId: item._id })}
+    >
+      <Image source={{ uri: item.imgUrl }} style={styles.postImage} />
+    </TouchableOpacity>
+  );
+
+  // const createPostButtonOnPressHandler = () => {
+  //   navigation.navigate("CreatePost");
+  // };
 
   return (
     <View style={styles.container}>
-      {/* Bagian Header Profile */}
-      <View style={styles.headerContainer}>
-        <View>
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.username}>{user.username}</Text>
-        </View>
-        <View style={styles.userInfoContainer}>
-          <View style={styles.statsContainer}>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{user.posts}</Text>
-              <Text style={styles.statLabel}>Posts</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{user.followers}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{user.following}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
-          </View>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.profileButton}>
-              <Text style={styles.editProfileText}>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.profileButton}
-              onPress={() => createPostButtonOnPressHandler()}
-            >
-              <Text style={styles.newPostText}>New Post</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      {user && (
+        <>
+          <View style={styles.headerContainer}>
+            <View>
+              <Image
+                source={{
+                  uri: "https://randomuser.me/api/portraits/lego/1.jpg",
+                }}
+                style={styles.avatar}
+              />
 
-      {/* Bagian Grid Postingan */}
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id}
-        numColumns={3} // Menampilkan grid dengan 3 kolom
-        style={styles.postsContainer}
-      />
+              <Text style={styles.username}>@{user.username}</Text>
+            </View>
+            <View style={styles.userInfoContainer}>
+              <Text style={styles.name}>{user.name}</Text>
+              <View style={styles.statsContainer}>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>{user.Posts.length}</Text>
+                  <Text style={styles.statLabel}>Posts</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>{user.Followers.length}</Text>
+                  <Text style={styles.statLabel}>Followers</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>
+                    {user.Followings.length}
+                  </Text>
+                  <Text style={styles.statLabel}>Following</Text>
+                </View>
+              </View>
+              {/* <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.profileButton}
+                  onPress={createPostButtonOnPressHandler}
+                >
+                  <Text style={styles.newPostText}>New Post</Text>
+                </TouchableOpacity>
+              </View> */}
+            </View>
+          </View>
+
+          <FlatList
+            data={user.Posts}
+            renderItem={renderPost}
+            keyExtractor={(item) => item._id}
+            numColumns={3}
+            style={styles.postsContainer}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No posts available</Text>
+            }
+          />
+        </>
+      )}
     </View>
   );
 };
@@ -124,8 +157,8 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 14,
-    color: "#888",
     textAlign: "center",
+    marginTop: 10,
   },
   statsContainer: {
     flexDirection: "row",
@@ -169,9 +202,25 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   postImage: {
-    width: width / 3, // Membagi layar menjadi 3 kolom
-    height: width / 3, // Membuat ukuran kotak sama dengan lebar
-    margin: 1, // Jarak antar gambar
+    width: width / 3,
+    height: width / 3,
+    margin: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: "#999",
   },
 });
 

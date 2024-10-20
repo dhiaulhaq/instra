@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,68 +6,97 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useMutation, useQuery } from "@apollo/client";
+import { GET_POSTS, DO_LIKE_POST } from "../queries";
+import { useFocusEffect } from "@react-navigation/native";
 
-const posts = [
-  {
-    id: "1",
-    user: "johndoe",
-    imageUrl: "https://picsum.photos/200/300",
-    likes: 120,
-    comments: 15,
-    caption: "Loving the vibes here!",
-  },
-  {
-    id: "2",
-    user: "janedoe",
-    imageUrl: "https://picsum.photos/200/300",
-    likes: 200,
-    comments: 5,
-    caption: "Another beautiful day.",
-  },
-];
+export default function HomePage({ route, navigation }) {
+  const { loading, error, data, refetch } = useQuery(GET_POSTS);
+  const [refreshing, setRefreshing] = useState(false);
 
-export default function HomePage() {
+  useEffect(() => {
+    if (route.params?.reload) {
+      refetch();
+    }
+  }, [route.params?.reload]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading posts...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error fetching posts!</Text>
+      </View>
+    );
+  }
+
   const renderPost = ({ item }) => (
     <View style={styles.postContainer}>
-      {/* User Section */}
       <View style={styles.userSection}>
-        <Text style={styles.username}>{item.user}</Text>
+        <Text style={styles.username}>
+          {item.Author?.username || "Unknown Author"}
+        </Text>
       </View>
 
-      {/* Post Image */}
-      <Image source={{ uri: item.imageUrl }} style={styles.postImage} />
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Detail", { postId: item._id })}
+      >
+        <Image source={{ uri: item.imgUrl }} style={styles.postImage} />
+      </TouchableOpacity>
 
-      {/* Post Interaction Section */}
       <View style={styles.interactionSection}>
         <View style={styles.intercationContainer}>
           <View style={styles.likeSection}>
-            <TouchableOpacity>
-              <Ionicons name="heart-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.interactionText}> {item.likes}</Text>
+            <Ionicons name={"heart-outline"} size={24} />
+            <TouchableOpacity
+              onPress={() => handleLikePress(item._id)}
+            ></TouchableOpacity>
           </View>
           <View style={styles.commentSection}>
-            <TouchableOpacity>
-              <Ionicons name="chatbubble-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.interactionText}> {item.comments}</Text>
+            <Ionicons name="chatbubble-outline" size={24} color="black" />
           </View>
         </View>
         <Text style={styles.caption}>
-          <Text style={styles.username}>{item.user}</Text> {item.caption}
+          <Text style={styles.username}>
+            {item.Author?.username || "Unknown Author"}
+          </Text>{" "}
+          {item.content}
         </Text>
+        <Text style={styles.seeMore}>Click image to see more...</Text>
       </View>
     </View>
   );
 
   return (
     <FlatList
-      data={posts}
+      data={data?.postFetchAll || []}
       renderItem={renderPost}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => item._id}
       showsVerticalScrollIndicator={false}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
     />
   );
 }
@@ -81,6 +110,9 @@ const styles = StyleSheet.create({
   },
   username: {
     fontWeight: "bold",
+  },
+  seeMore: {
+    color: "#888",
   },
   postImage: {
     width: "100%",
@@ -106,5 +138,15 @@ const styles = StyleSheet.create({
   },
   caption: {
     marginTop: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

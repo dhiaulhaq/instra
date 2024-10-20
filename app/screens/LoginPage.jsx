@@ -1,30 +1,63 @@
 import React, { useContext, useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { LoginContext } from "../contexts/LoginContext";
+import { useMutation } from "@apollo/client";
+import { DO_LOGIN } from "../queries";
+import * as SecureStore from "expo-secure-store";
 
 const LoginPage = ({ navigation }) => {
   const { setIsLoggedIn } = useContext(LoginContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  const [userLogin, { data, loading, error }] = useMutation(DO_LOGIN, {
+    onCompleted: async (res) => {
+      let token = null;
+      let userId = null;
+
+      if (
+        res &&
+        res.userLogin &&
+        res.userLogin.data &&
+        res.userLogin.data.token &&
+        res.userLogin.data.userId
+      ) {
+        token = res.userLogin.data.token;
+        userId = res.userLogin.data.userId;
+
+        await SecureStore.setItemAsync("token", token);
+        await SecureStore.setItemAsync("userId", userId);
+
+        setIsLoggedIn(true);
+        Alert.alert("Success", "Login successful!");
+      } else {
+        Alert.alert(
+          "Error",
+          "Login failed: " + (res.userLogin.message || "Unknown error")
+        );
+      }
+    },
+    onError: () => {
+      Alert.alert("Error", "Invalid username or password.");
+    },
+  });
+
+  const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert("Error", "Please fill in both username and password.");
       return;
     }
 
-    // Simulasi proses login
-    if (username === "testuser" && password === "password123") {
-      Alert.alert("Success", "Login successful!");
-      setIsLoggedIn(true);
-      // navigation.navigate("Home"); // Setelah login, pindah ke halaman Home
-    } else {
-      Alert.alert("Error", "Invalid username or password.");
-    }
+    await userLogin({
+      variables: {
+        username,
+        password,
+      },
+    });
   };
 
   const handleNavigateToRegister = () => {
-    navigation.navigate("Register"); // Navigasi ke halaman Register
+    navigation.navigate("Register");
   };
 
   return (
@@ -32,24 +65,49 @@ const LoginPage = ({ navigation }) => {
       <Text style={styles.title}>Login</Text>
 
       <Text style={styles.label}>Username</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your username"
-        value={username}
-        onChangeText={setUsername}
-      />
+      {loading ? (
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your username"
+          value={username}
+          onChangeText={setUsername}
+          editable={false}
+        />
+      ) : (
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your username"
+          value={username}
+          onChangeText={setUsername}
+        />
+      )}
 
       <Text style={styles.label}>Password</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      {loading ? (
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          secureTextEntry={true}
+          value={password}
+          onChangeText={setPassword}
+          editable={false}
+        />
+      ) : (
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          secureTextEntry={true}
+          value={password}
+          onChangeText={setPassword}
+        />
+      )}
 
       <View style={styles.buttonContainer}>
-        <Button title="Login" onPress={handleLogin} color={"tomato"} />
+        {loading ? (
+          <Button title="Loading..." disabled color={"tomato"} />
+        ) : (
+          <Button title="Login" onPress={handleLogin} color={"tomato"} />
+        )}
       </View>
 
       <Text style={styles.registerText}>Don't have an account?</Text>
@@ -57,7 +115,7 @@ const LoginPage = ({ navigation }) => {
         <Button
           title="Register Here"
           onPress={handleNavigateToRegister}
-          color={"blue"} // Tombol berwarna biru untuk membuka halaman Register
+          color={"blue"}
         />
       </View>
     </View>
@@ -98,6 +156,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: "#333",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

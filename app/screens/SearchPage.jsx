@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,42 +7,43 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
+import { useLazyQuery } from "@apollo/client";
+import { GET_USERS_SEARCH } from "../queries";
+import { useNavigation } from "@react-navigation/native";
 
 const SearchPage = () => {
   const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([
-    // Contoh data hasil pencarian
-    {
-      id: "1",
-      name: "John Doe",
-      avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-    },
-    {
-      id: "3",
-      name: "Mark Johnson",
-      avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-    },
-    {
-      id: "4",
-      name: "Lucy Brown",
-      avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-    },
-  ]);
+  const [searchResults, setSearchResults] = useState([]);
+  const navigation = useNavigation();
+
+  const [searchUsers, { loading, data, error }] =
+    useLazyQuery(GET_USERS_SEARCH);
 
   const handleSearch = (text) => {
     setSearchText(text);
-    // Lakukan filter dari hasil pencarian (simulasi)
-    const filteredResults = searchResults.filter((user) =>
-      user.name.toLowerCase().includes(text.toLowerCase())
-    );
-    setSearchResults(filteredResults);
+
+    if (text.trim().length > 0) {
+      searchUsers({ variables: { keyword: text } });
+    } else {
+      setSearchResults([]);
+    }
   };
+
+  useEffect(() => {
+    if (data && data.userSearch) {
+      setSearchResults(data.userSearch);
+    }
+  }, [data]);
+
+  const handleUserPress = (userId) => {
+    navigation.navigate("User", { userId: userId });
+  };
+
+  if (error) {
+    return <Text>Error loading data</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -52,19 +53,28 @@ const SearchPage = () => {
         value={searchText}
         onChangeText={handleSearch}
       />
-      <FlatList
-        data={searchResults}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.userContainer}>
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
-            <Text style={styles.username}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No results found</Text>
-        }
-      />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="tomato" />
+      ) : (
+        <FlatList
+          data={searchResults}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.userContainer}
+              onPress={() => handleUserPress(item._id)}
+            >
+              <Text style={styles.username}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            searchText.trim().length > 0 ? (
+              <Text style={styles.emptyText}>No results found</Text>
+            ) : null
+          }
+        />
+      )}
     </View>
   );
 };

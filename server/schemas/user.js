@@ -16,6 +16,7 @@ type UserDetail {
     email: String!
     Followings: [User]
     Followers: [User]
+    Posts: [Post]
 }
 
 input UserCreateInput {
@@ -57,6 +58,15 @@ const userResolvers = {
                     {
                         $match: {
                             _id: new ObjectId(id),
+                        },
+                    },
+
+                    {
+                        $lookup: {
+                            from: "posts",
+                            localField: "_id",
+                            foreignField: "authorId",
+                            as: "Posts",
                         },
                     },
 
@@ -136,7 +146,8 @@ const userResolvers = {
                     message: 'Success login!',
                     statusCode: user.statusCode,
                     data: {
-                        token: user.token
+                        token: user.token,
+                        userId: user.userId
                     },
                 }
             } catch (error) {

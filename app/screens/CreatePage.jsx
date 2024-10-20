@@ -8,50 +8,69 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { useMutation } from "@apollo/client";
+import { useNavigation } from "@react-navigation/native";
+import { DO_CREATE_POST } from "../queries";
 
 const CreatePage = () => {
-  const [caption, setCaption] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [content, setcontent] = useState("");
+  const [imgUrl, setimgUrl] = useState("");
   const [tags, setTags] = useState("");
 
+  const navigation = useNavigation();
+
+  const [createPost, { loading, error }] = useMutation(DO_CREATE_POST, {
+    onCompleted: (data) => {
+      Alert.alert("Success", "Your post has been created!");
+      setcontent("");
+      setimgUrl("");
+      setTags("");
+
+      navigation.navigate("Home", { reload: true });
+    },
+    onError: (error) => {
+      Alert.alert("Error", "Failed to create post");
+      console.log(error);
+    },
+  });
+
   const handleSubmit = () => {
-    if (!caption || !imageUrl || !tags) {
+    if (!content || !imgUrl || !tags) {
       Alert.alert("Error", "Please fill out all fields");
       return;
     }
 
     const postData = {
-      caption,
-      imageUrl,
-      tags: tags.split(",").map((tag) => tag.trim()), // Memisahkan tag berdasarkan koma
+      content,
+      imgUrl,
+      tags: tags.split(",").map((tag) => tag.trim()),
     };
 
-    console.log("Post Data:", postData);
-    Alert.alert("Success", "Your post has been created!");
-    // Lakukan proses penyimpanan data ke backend
+    createPost({
+      variables: {
+        input: postData,
+      },
+    });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Create New Post</Text>
-
-      <Text style={styles.label}>Caption</Text>
+      <Text style={styles.label}>content</Text>
       <TextInput
         style={styles.input}
-        placeholder="Write a caption..."
-        value={caption}
-        onChangeText={setCaption}
+        placeholder="Write a content..."
+        value={content}
+        onChangeText={setcontent}
         multiline
       />
-
       <Text style={styles.label}>Image URL</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter image URL"
-        value={imageUrl}
-        onChangeText={setImageUrl}
+        value={imgUrl}
+        onChangeText={setimgUrl}
       />
-
       <Text style={styles.label}>Tags (comma separated)</Text>
       <TextInput
         style={styles.input}
@@ -59,6 +78,8 @@ const CreatePage = () => {
         value={tags}
         onChangeText={setTags}
       />
+      {loading && <Text>Creating post...</Text>}
+      {error && <Text>Error creating post</Text>}
 
       <View style={styles.buttonContainer}>
         <Button
@@ -66,6 +87,7 @@ const CreatePage = () => {
           style={styles.buttonCreate}
           title="Create Post"
           onPress={handleSubmit}
+          disabled={loading}
         />
       </View>
     </ScrollView>

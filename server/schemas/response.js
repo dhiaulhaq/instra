@@ -6,7 +6,8 @@ interface Response{
 }
 
 type UserLoginData{
-    token: String
+    token: String!
+    userId: String!
 }
 
 type UserRegisterData{

@@ -10,7 +10,6 @@ class User {
     }
 
     static async register(payload) {
-        console.log(payload);
 
         const findUsername = await this.getCollection()
             .findOne({ username: payload.username });
@@ -59,6 +58,8 @@ class User {
 
         await this.getCollection().insertOne({
             ...payload,
+            email: payload.email.toLowerCase(),
+            username: payload.username.toLowerCase(),
             password: hashedPassword,
         });
 
@@ -69,7 +70,7 @@ class User {
 
     static async login(username, password) {
         const user = await this.getCollection().findOne({
-            "username": username
+            "username": username.toLowerCase()
         });
 
         if (!user) {
@@ -100,6 +101,7 @@ class User {
         return {
             statusCode: 200,
             token: access_token,
+            userId: user._id
         };
     }
 

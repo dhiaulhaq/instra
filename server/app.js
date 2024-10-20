@@ -17,7 +17,8 @@ const authentication = require('./middlewares/authentication');
 
 const server = new ApolloServer({
     typeDefs: [responseTypeDefs, userTypeDefs, followTypeDefs, postTypeDefs],
-    resolvers: [userResolvers, followResolvers, postResolvers]
+    resolvers: [userResolvers, followResolvers, postResolvers],
+    introspection: true
 });
 
 (async () => {
